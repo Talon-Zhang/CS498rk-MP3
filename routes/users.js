@@ -2,6 +2,7 @@ var express = require('express'),
     router = express.Router(),
     mongoose = require('mongoose'),
     User = require('../models/userSchema');
+    Task = require('../models/taskSchema');
 
     router.get('/', function (req, res) {
         var query = req.query;
@@ -142,25 +143,35 @@ var express = require('express'),
     });
 
     router.delete('/:id', function (req, res) {
-        User.deleteOne({ _id: req.params.id}, function (err, document) {
-            if (err) {
+        User.findById(req.params.id, function (err, document) {
+            if (err||!document) {
                 res.status(404).send({
                     message: 'Not Found',
                     data: []
                 });
             } else {
-                if (document.deletedCount!==0){
-                    res.status(200).send({
-                        message: 'Deleted',
-                        data: []
-                    });
+                var temp = document.toObject();
+                if (temp.pendingTasks){
+                    temp.pendingTasks.map(task => {
+                        Task.findOneAndUpdate(
+                            {"_id": mongoose.Types.ObjectId(task)},
+                            {"assignedUser": "", "assignedUserName": "unassigned"}
+                        )
+                    })
                 }
-                else {
-                    res.status(404).send({
-                        message: 'Not Found',
-                        data: []
-                    });
-                }
+                User.deleteOne({ _id: req.params.id}, function (err, document) {
+                    if (err) {
+                        res.status(500).send({
+                            message: 'Server Error',
+                            data: []
+                        });
+                    } else {
+                            res.status(200).send({
+                                message: 'Deleted',
+                                data: []
+                            });
+                    }
+                });
             }
         });
     });
