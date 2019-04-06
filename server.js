@@ -27,6 +27,7 @@ app.use(allowCrossDomain);
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+
 app.use(bodyParser.json());
 
 // Use routes as a module (see index.js)
